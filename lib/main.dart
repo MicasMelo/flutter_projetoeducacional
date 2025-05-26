@@ -1,10 +1,13 @@
 import 'package:tarefa2/enums/curso_enum.dart';
+import 'package:tarefa2/enums/modalidade_enum.dart';
 import 'package:tarefa2/enums/sexo_enum.dart';
 import 'package:tarefa2/models/aluno_vo.dart';
+import 'package:tarefa2/models/disciplina.dart';
 import 'package:tarefa2/models/professor_vo.dart';
 import 'package:tarefa2/repositories/aluno_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tarefa2/repositories/disciplina_repository.dart';
 import 'package:tarefa2/repositories/professor_repository.dart';
 
 // import 'exceptions/aluno_not_found_exception.dart';
@@ -768,5 +771,201 @@ class _DateInputFormatter extends TextInputFormatter {
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
     );
+  }
+}
+
+class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _repository = DisciplinaRepository();
+
+  final _nomeController = TextEditingController();
+  final _dataCriacaoController = TextEditingController();
+
+  CursoEnum? _curso;
+  ModalidadeEnum? _modalidade;
+  bool _ativo = false;
+
+  DisciplinaVo? _disciplina;
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _dataCriacaoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_disciplina == null ? 'Nova Disciplina' : 'Edição de Disciplina'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              _salvar();
+            },
+            icon: Icon(Icons.save_outlined),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _nomeController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Nome da disciplina',
+                  hintText: 'Digite o nome da disciplina',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Nome da disciplina é obrigatório';
+                  } else if (value.length < 10) {
+                    return 'Nome deve possuir pelo menos 10 caracteres';
+                  } else if (value.length > 50) {
+                    return 'Nome deve ter até 50 caracteres';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<CursoEnum>(
+                value: _curso,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Curso Associado',
+                ),
+                items:
+                    CursoEnum.values
+                        .map(
+                          (curso) => DropdownMenuItem(
+                            value: curso,
+                            child: Text(curso.descricao),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _curso = value;
+                  });
+                },
+                validator: (value) {
+                  if (_curso == null) {
+                    return 'Curso é obrigatório';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<ModalidadeEnum>(
+                value: _modalidade,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Modalidade',
+                ),
+                items:
+                    ModalidadeEnum.values
+                        .map(
+                          (modalidade) => DropdownMenuItem(
+                            value: modalidade,
+                            child: Text(modalidade.descricao),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _modalidade = value;
+                  });
+                },
+                validator: (value) {
+                  if (_modalidade == null) {
+                    return 'Modalidade é obrigatória';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _dataCriacaoController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Data de Criação',
+                  hintText: 'DD/MM/AAAA',
+                ),
+                keyboardType: TextInputType.datetime,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(8),
+                  _DateInputFormatter(),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Data de criação é obrigatória';
+                  } else if (value.length != 10) {
+                    return 'Data inválida';
+                  }
+                  try {
+                    final parts = value.split('/');
+                    final day = int.parse(parts[0]);
+                    final month = int.parse(parts[1]);
+                    final year = int.parse(parts[2]);
+                    final data = DateTime(year,month,day);
+
+                    if (data.isAfter(DateTime.now())) {
+                      return 'Data não pode ser futura';
+                    }
+
+                  } catch (e){
+                    return 'Data inválida';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              CheckboxListTile(
+                title: Text('Ativo'),
+                value: _ativo,
+                onChanged: (value) {
+                  setState(() {
+                    _ativo = value ?? false;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _salvar() {
+    if (_formKey.currentState!.validate()) {
+      final parts = _dataCriacaoController.text.split('/');
+      final dataCriacao = DateTime(
+        int.parse(parts[2]),
+        int.parse(parts[1]),
+        int.parse(parts[0])
+      );
+      final disciplina = DisciplinaVo(
+        id: _disciplina?.id,
+        nome: _nomeController.text,
+        curso: _curso!,
+        modalidade: _modalidade!,
+        dataCriacao: dataCriacao,
+        ativo: _ativo
+      );
+      _repository.save(disciplina);
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Disciplina salva com sucesso!'))
+      );
+      Navigator.of(context).pop();
+    }
   }
 }

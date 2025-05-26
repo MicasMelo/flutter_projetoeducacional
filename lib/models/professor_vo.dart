@@ -38,7 +38,7 @@ class ProfessorVo {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'ra': cpf,
+      'cpf': cpf,
       'nomeCompleto': nomeCompleto,
       'email': email,
       'dataNascimento': dataNascimento.toIso8601String(),
@@ -51,7 +51,7 @@ class ProfessorVo {
   factory ProfessorVo.fromMap(Map<String, dynamic> map) {
     return ProfessorVo(
       id: map['id'],
-      cpf: map['ra'],
+      cpf: map['cpf'],
       nomeCompleto: map['nomeCompleto'],
       email: map['email'],
       dataNascimento: DateTime.parse(map['dataNascimento']), // aquele ISO

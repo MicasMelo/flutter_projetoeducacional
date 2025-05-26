@@ -5,5 +5,3 @@ enum SexoEnum {
   final String descricao;
   const SexoEnum(this.descricao);
 }
-
-// SexoEnum.MASCULINO
