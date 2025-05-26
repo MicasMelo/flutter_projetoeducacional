@@ -20,8 +20,40 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: false),
+      theme: ThemeData(
+        useMaterial3: false, // Se quiser usar Material 3, pode por true
+        scaffoldBackgroundColor: const Color(0xFF202123),
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0E639C),
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        colorScheme: ColorScheme(
+          brightness: Brightness.dark, // Define que é um tema escuro
+          primary: Color.fromARGB(255, 78, 190, 255),
+          onPrimary: Colors.white,
+          secondary: Colors.grey,
+          onSecondary: Colors.white,
+          error: Colors.red,
+          onError: Colors.white,
+          surface: Color(0xFF2C2C2C),
+          onSurface: Colors.white,
+        ),
+
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.white),
+          bodyLarge: TextStyle(color: Colors.white),
+          titleLarge: TextStyle(color: Colors.white),
+        ),
+      ),
       home: HomePage(),
     );
   }
@@ -40,7 +72,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Page'),
+        title: Text('Painel Acadêmico'),
         actions: [
           PopupMenuButton<String>(
             icon: Icon(Icons.add_outlined),
@@ -196,6 +228,21 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            constraints: BoxConstraints(maxWidth: 600),
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -258,54 +305,69 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
                 },
               ),
               SizedBox(height: 16),
-              TextFormField(
-                controller: _dataNascimentoController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Data de Nascimento',
-                  hintText: 'DD/MM/AAAA',
-                ),
-                keyboardType: TextInputType.datetime,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(8),
-                  _DateInputFormatter(), // para criar nossas formatação própia
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Data de nascimento é obrigatório';
-                  } else if (value.length != 10) {
-                    return 'Data inválida';
+              GestureDetector(
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().subtract(Duration(days: 365 * 16)),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+
+                  if (pickedDate != null) {
+                    setState(() {
+                      _dataNascimentoController.text = 
+                          "${pickedDate.day.toString().padLeft(2, '0')}/"
+                          "${pickedDate.month.toString().padLeft(2, '0')}/"
+                          "${pickedDate.year}";
+                    });
                   }
-                  try {
-                    // "01/01/1990" = Datetime
-                    // transformar split "01/01/1990" em ["01", "01", "1990"], outros pequenos vetores
-                    final parts = value.split('/');
-                    final day = int.parse(parts[0]);
-                    final month = int.parse(parts[1]);
-                    final year = int.parse(parts[2]);
-                    final data = DateTime(year,month,day);
-
-                    if (data.isAfter(DateTime.now())) {
-                      return 'Data não pode ser do futuro';
-                    }
-
-
-                    int idade = DateTime.now().year - year;
-                    if (DateTime.now().month < month ||
-                        DateTime.now().month == month &&
-                          DateTime.now().day < day) {
-                      idade--;
-                    }
-
-                    if (idade < 16) {
-                      return 'Aluno deve ter pelo menos 16 anos';
-                    }
-                  } catch (e){
-                    return 'Data inválida';
-                  }
-                  return null;
                 },
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    controller: _dataNascimentoController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Data de Nascimento',
+                      hintText: 'DD/MM/AAAA',
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Data de nascimento é obrigatória';
+                      }
+
+                      try {
+                        final parts = value.split('/');
+                        if (parts.length != 3) return 'Data inválida';
+
+                        final day = int.parse(parts[0]);
+                        final month = int.parse(parts[1]);
+                        final year = int.parse(parts[2]);
+                        final data = DateTime(year, month, day);
+
+                        if (data.isAfter(DateTime.now())) {
+                          return 'Data não pode ser do futuro';
+                        }
+
+                        int idade = DateTime.now().year - year;
+                        if (DateTime.now().month < month ||
+                            (DateTime.now().month == month && DateTime.now().day < day)) {
+                          idade--;
+                        }
+
+                        if (idade < 16) {
+                          return 'Aluno deve ter pelo menos 16 anos';
+                        }
+
+                      } catch (e) {
+                        return 'Data inválida';
+                      }
+
+                      return null;
+                    },
+                  ),
+                ),
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<SexoEnum>(
@@ -363,20 +425,46 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
                   return null;
                 },
               ),
-              CheckboxListTile(
-                title: Text('Matriculado'),
-                value: _matriculado,
-                onChanged: (value) {
-                  setState(() {
-                    _matriculado = value ?? false;
-                  });
-                },
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Radio<bool>(
+                        value: true,
+                        groupValue: _matriculado,
+                        onChanged: (value) {
+                          setState(() {
+                            _matriculado = value!;
+                          });
+                        },
+                      ),
+                      Text('Matriculado'),
+                    ],
+                  ),
+                  SizedBox(width: 20),
+                  Row(
+                    children: [
+                      Radio<bool>(
+                        value: false,
+                        groupValue: _matriculado,
+                        onChanged: (value) {
+                          setState(() {
+                            _matriculado = value!;
+                          });
+                        },
+                      ),
+                      Text('Não Matriculado'),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
-    );
+    )));
   }
 
   void _salvar() {
@@ -559,6 +647,21 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            constraints: BoxConstraints(maxWidth: 600),
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -621,52 +724,69 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
                 },
               ),
               SizedBox(height: 16),
-              TextFormField(
-                controller: _dataNascimentoController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Data de Nascimento',
-                  hintText: 'DD/MM/AAAA',
-                ),
-                keyboardType: TextInputType.datetime,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(8),
-                  _DateInputFormatter(),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Data de nascimento é obrigatório';
-                  } else if (value.length != 10) {
-                    return 'Data inválida';
+              GestureDetector(
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().subtract(Duration(days: 365 * 16)),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+
+                  if (pickedDate != null) {
+                    setState(() {
+                      _dataNascimentoController.text = 
+                          "${pickedDate.day.toString().padLeft(2, '0')}/"
+                          "${pickedDate.month.toString().padLeft(2, '0')}/"
+                          "${pickedDate.year}";
+                    });
                   }
-                  try {
-                    final parts = value.split('/');
-                    final day = int.parse(parts[0]);
-                    final month = int.parse(parts[1]);
-                    final year = int.parse(parts[2]);
-                    final data = DateTime(year,month,day);
-
-                    if (data.isAfter(DateTime.now())) {
-                      return 'Data não pode ser do futuro';
-                    }
-
-
-                    int idade = DateTime.now().year - year;
-                    if (DateTime.now().month < month ||
-                        DateTime.now().month == month &&
-                          DateTime.now().day < day) {
-                      idade--;
-                    }
-
-                    if (idade < 18) {
-                      return 'Professor deve ter pelo menos 18 anos';
-                    }
-                  } catch (e){
-                    return 'Data inválida';
-                  }
-                  return null;
                 },
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    controller: _dataNascimentoController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Data de Nascimento',
+                      hintText: 'DD/MM/AAAA',
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Data de nascimento é obrigatória';
+                      }
+
+                      try {
+                        final parts = value.split('/');
+                        if (parts.length != 3) return 'Data inválida';
+
+                        final day = int.parse(parts[0]);
+                        final month = int.parse(parts[1]);
+                        final year = int.parse(parts[2]);
+                        final data = DateTime(year, month, day);
+
+                        if (data.isAfter(DateTime.now())) {
+                          return 'Data não pode ser do futuro';
+                        }
+
+                        int idade = DateTime.now().year - year;
+                        if (DateTime.now().month < month ||
+                            (DateTime.now().month == month && DateTime.now().day < day)) {
+                          idade--;
+                        }
+
+                        if (idade < 18) {
+                          return 'Professor deve ter pelo menos 18 anos';
+                        }
+
+                      } catch (e) {
+                        return 'Data inválida';
+                      }
+
+                      return null;
+                    },
+                  ),
+                ),
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<SexoEnum>(
@@ -724,20 +844,46 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
                   return null;
                 },
               ),
-              CheckboxListTile(
-                title: Text('Ativo'),
-                value: _ativo,
-                onChanged: (value) {
-                  setState(() {
-                    _ativo = value ?? false;
-                  });
-                },
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Radio<bool>(
+                        value: true,
+                        groupValue: _ativo,
+                        onChanged: (value) {
+                          setState(() {
+                            _ativo = value!;
+                          });
+                        },
+                      ),
+                      Text('Ativo'),
+                    ],
+                  ),
+                  SizedBox(width: 20),
+                  Row(
+                    children: [
+                      Radio<bool>(
+                        value: false,
+                        groupValue: _ativo,
+                        onChanged: (value) {
+                          setState(() {
+                            _ativo = value!;
+                          });
+                        },
+                      ),
+                      Text('Inativo'),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
-    );
+    )));
   }
 
   void _salvar() {
@@ -879,40 +1025,6 @@ class _ProfessorListPageState extends State<ProfessorListPage> {
   }
 }
 
-class _DateInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final String text = newValue.text.replaceAll(r'[^0-9]', '');
-
-    if (text.length > 8) {
-      return oldValue;
-    }
-
-    String formatted = '';
-    if (text.length >= 2) {
-      formatted += '${text.substring(0, 2)}/';
-      if (text.length >= 4) {
-        formatted += '${text.substring(2, 4)}/';
-        if (text.length > 4) {
-          formatted += text.substring(4); // dia + '/' + mês + '/' + ano
-        }
-      } else {
-        formatted += text.substring(2);
-      }
-    } else {
-      formatted = text;
-    }
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
-}
-
 class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
   final _formKey = GlobalKey<FormState>();
 
@@ -950,6 +1062,21 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            constraints: BoxConstraints(maxWidth: 600),
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -1030,57 +1157,100 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
                 },
               ),
               SizedBox(height: 16),
-              TextFormField(
-                controller: _dataCriacaoController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Data de Criação',
-                  hintText: 'DD/MM/AAAA',
-                ),
-                keyboardType: TextInputType.datetime,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(8),
-                  _DateInputFormatter(),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Data de criação é obrigatória';
-                  } else if (value.length != 10) {
-                    return 'Data inválida';
-                  }
-                  try {
-                    final parts = value.split('/');
-                    final day = int.parse(parts[0]);
-                    final month = int.parse(parts[1]);
-                    final year = int.parse(parts[2]);
-                    final data = DateTime(year,month,day);
+              GestureDetector(
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().subtract(Duration(days: 365 * 16)),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
 
-                    if (data.isAfter(DateTime.now())) {
-                      return 'Data não pode ser futura';
-                    }
-
-                  } catch (e){
-                    return 'Data inválida';
+                  if (pickedDate != null) {
+                    setState(() {
+                      _dataCriacaoController.text = 
+                          "${pickedDate.day.toString().padLeft(2, '0')}/"
+                          "${pickedDate.month.toString().padLeft(2, '0')}/"
+                          "${pickedDate.year}";
+                    });
                   }
-                  return null;
                 },
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    controller: _dataCriacaoController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Data de Lançamento',
+                      hintText: 'DD/MM/AAAA',
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Data do lançamento é obrigatória';
+                      }
+
+                      try {
+                        final parts = value.split('/');
+                        if (parts.length != 3) return 'Data inválida';
+
+                        final day = int.parse(parts[0]);
+                        final month = int.parse(parts[1]);
+                        final year = int.parse(parts[2]);
+                        final data = DateTime(year, month, day);
+
+                        if (data.isAfter(DateTime.now())) {
+                          return 'Data não pode ser do futuro';
+                        }
+
+                      } catch (e) {
+                        return 'Data inválida';
+                      }
+
+                      return null;
+                    },
+                  ),
+                ),
               ),
               SizedBox(height: 16),
-              CheckboxListTile(
-                title: Text('Ativo'),
-                value: _ativo,
-                onChanged: (value) {
-                  setState(() {
-                    _ativo = value ?? false;
-                  });
-                },
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Radio<bool>(
+                        value: false,
+                        groupValue: _ativo,
+                        onChanged: (value) {
+                          setState(() {
+                            _ativo = value!;
+                          });
+                        },
+                      ),
+                      Text('Disponível'),
+                    ],
+                  ),
+                  SizedBox(width: 20),
+                  Row(
+                    children: [
+                      Radio<bool>(
+                        value: true,
+                        groupValue: _ativo,
+                        onChanged: (value) {
+                          setState(() {
+                            _ativo = value!;
+                          });
+                        },
+                      ),
+                      Text('Indisponível'),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
-    );
+    )));
   }
 
   void _salvar() {
