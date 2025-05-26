@@ -7,19 +7,10 @@ import 'package:tarefa2/enums/curso_enum.dart';
 // se precisa criar professores depois, bastaria criar outra classe
 
 class AlunoRepository {
-  // Interessante a ser estudado:
-
-  // design pattern (padrão de projeto) = Singleton (única instância da classe)
-  // refactoring guru
-
-  // 3. primeira e única instanciação do atributo '_instance'
   static final AlunoRepository _instance = AlunoRepository._internal();
 
-  // 1. construtor privado (reduz o escopo à classe - não pode cahamr por fora)
   AlunoRepository._internal();
 
-  // 2. método classe que funciona como construtor
-  // retorna sempre a mesma referência (instância) que é o atributo '_instance'
   factory AlunoRepository() {
     return _instance;
   }

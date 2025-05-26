@@ -1,9 +1,11 @@
 import 'package:tarefa2/enums/curso_enum.dart';
 import 'package:tarefa2/enums/sexo_enum.dart';
 import 'package:tarefa2/models/aluno_vo.dart';
+import 'package:tarefa2/models/professor_vo.dart';
 import 'package:tarefa2/repositories/aluno_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tarefa2/repositories/professor_repository.dart';
 
 // import 'exceptions/aluno_not_found_exception.dart';
 
@@ -39,19 +41,54 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Home Page'),
         actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.add_outlined),
+            onSelected: (value) {
+              switch (value) {
+                case 'aluno':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AlunoFormPage()),
+                  );
+                  break;
+                case 'professor':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfessorFormPage()),
+                  );
+                  break;
+                case 'disciplina':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => DisciplinaFormPage()),
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'aluno',
+                child: Text('Adicionar Aluno'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'professor',
+                child: Text('Adicionar Professor'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'disciplina',
+                child: Text('Adicionar Disciplina'),
+              ),
+            ],
+          ),
           IconButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AlunoFormPage()),
+                MaterialPageRoute(builder: (context) => AlunoListPage()),
               );
             },
-            icon: Icon(Icons.add_outlined),
+            icon: Icon(Icons.list_outlined),
           ),
-          IconButton(onPressed: () {
-            Navigator.push(
-              context, MaterialPageRoute(builder: (context) => AlunoListPage()));
-          }, icon: Icon(Icons.list_outlined)),
         ],
       ),
     );
@@ -69,8 +106,25 @@ class AlunoFormPage extends StatefulWidget {
   State<AlunoFormPage> createState() => _AlunoFormPageState();
 }
 
+class ProfessorFormPage extends StatefulWidget {
+  final String? professorID;
+
+  const ProfessorFormPage({super.key, this.professorID});
+
+  @override
+  State<ProfessorFormPage> createState() => _ProfessorFormPageState();
+}
+
+class DisciplinaFormPage extends StatefulWidget {
+  final String? disciplinaId;
+
+  const DisciplinaFormPage({super.key, this.disciplinaId});
+
+  @override
+  State<DisciplinaFormPage> createState() => _DisciplinaFormPageState();
+}
+
 class _AlunoFormPageState extends State<AlunoFormPage> {
-  // chave/identificador global para o formulário do widget
   final _formKey = GlobalKey<FormState>();
 
   final _repository = AlunoRepository();
@@ -80,10 +134,9 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
   final _emailController = TextEditingController();
   final _dataNascimentoController = TextEditingController();
 
-  // preciso de outra forma para recuperar, no caso esses dois serão compobox
   SexoEnum? _sexo;
-  CursoEnum? _curso; // usando underline _ para marcar que é privado
-  bool _matriculado = false; // checkbox
+  CursoEnum? _curso;
+  bool _matriculado = false;
 
   AlunoVo? _aluno;
 
@@ -150,9 +203,9 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
                   if (value == null || value.isEmpty) {
                     return 'Nome completo é obrigatório';
                   } else if (value.length < 10) {
-                    return 'Noem deve possuir pelo menos 10 caracteres';
+                    return 'Nome deve possuir pelo menos 10 caracteres';
                   } else if (value.length > 50) {
-                    return 'Noem deve ter até 50 caracteres';
+                    return 'Nome deve ter até 50 caracteres';
                   }
                   return null;
                 },
@@ -185,7 +238,7 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(8),
-                  _DateInputFormatter(), // vamos criar nossas própias formatações também
+                  _DateInputFormatter(), // para criar nossas formatação própia
                 ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -195,7 +248,7 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
                   }
                   try {
                     // "01/01/1990" = Datetime
-                    // precisamos transformar split "01/01/1990" em ["01", "01", "1990"], outros pequenos vetores
+                    // transformar split "01/01/1990" em ["01", "01", "1990"], outros pequenos vetores
                     final parts = value.split('/');
                     final day = int.parse(parts[0]);
                     final month = int.parse(parts[1]);
@@ -431,6 +484,256 @@ class _AlunoListPageState extends State<AlunoListPage> {
         );
       },
     );
+  }
+}
+
+class _ProfessorFormPageState extends State<ProfessorFormPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _repository = ProfessorRepository();
+
+  final _cpfController = TextEditingController();
+  final _nomeCompletoController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _dataNascimentoController = TextEditingController();
+
+  SexoEnum? _sexo;
+  CursoEnum? _curso;
+  bool _ativo = false;
+
+  ProfessorVo? _professor;
+
+  @override
+  void dispose() {
+    _cpfController.dispose();
+    _nomeCompletoController.dispose();
+    _emailController.dispose();
+    _dataNascimentoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_professor == null ? 'Novo Professor' : 'Edição de Professor'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              _salvar();
+            },
+            icon: Icon(Icons.save_outlined),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _cpfController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'CPF',
+                  hintText: '12345678900',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'CPF é obrigatório';
+                  } else if (value.length != 11) {
+                    return 'CPF deve ter exatamente 11 dígitos';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _nomeCompletoController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Nome completo',
+                  hintText: 'Digite o nome completo',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Nome completo é obrigatório';
+                  } else if (value.length < 10) {
+                    return 'Nome deve possuir pelo menos 10 caracteres';
+                  } else if (value.length > 50) {
+                    return 'Nome deve ter até 50 caracteres';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'E-mail',
+                  hintText: 'example@fema.edu.br',
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'E-mail é obrigatório';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _dataNascimentoController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Data de Nascimento',
+                  hintText: 'DD/MM/AAAA',
+                ),
+                keyboardType: TextInputType.datetime,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(8),
+                  _DateInputFormatter(),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Data de nascimento é obrigatório';
+                  } else if (value.length != 10) {
+                    return 'Data inválida';
+                  }
+                  try {
+                    final parts = value.split('/');
+                    final day = int.parse(parts[0]);
+                    final month = int.parse(parts[1]);
+                    final year = int.parse(parts[2]);
+                    final data = DateTime(year,month,day);
+
+                    if (data.isAfter(DateTime.now())) {
+                      return 'Data não pode ser do futuro';
+                    }
+
+
+                    int idade = DateTime.now().year - year;
+                    if (DateTime.now().month < month ||
+                        DateTime.now().month == month &&
+                          DateTime.now().day < day) {
+                      idade--;
+                    }
+
+                    if (idade < 18) {
+                      return 'Professor deve ter pelo menos 18 anos';
+                    }
+                  } catch (e){
+                    return 'Data inválida';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<SexoEnum>(
+                value: _sexo,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Sexo',
+                ),
+                items:
+                    SexoEnum.values
+                        .map(
+                          (sexo) => DropdownMenuItem(
+                            value: sexo,
+                            child: Text(sexo.descricao),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _sexo = value;
+                  });
+                },
+                validator: (value) {
+                  if (_sexo == null) {
+                    return 'Sexo é obrigatório';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<CursoEnum>(
+                value: _curso,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Área Principal de Ensino',
+                ),
+                items:
+                    CursoEnum.values
+                        .map(
+                          (curso) => DropdownMenuItem(
+                            value: curso,
+                            child: Text(curso.descricao),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _curso = value;
+                  });
+                },
+                validator: (value) {
+                  if (_curso == null) {
+                    return 'Área / Curso é obrigatório';
+                  }
+                  return null;
+                },
+              ),
+              CheckboxListTile(
+                title: Text('Ativo'),
+                value: _ativo,
+                onChanged: (value) {
+                  setState(() {
+                    _ativo = value ?? false;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _salvar() {
+    if (_formKey.currentState!.validate()) {
+      final parts = _dataNascimentoController.text.split('/');
+      final dataNascimento = DateTime(
+        int.parse(parts[2]),
+        int.parse(parts[1]),
+        int.parse(parts[0])
+      );
+      final professor = ProfessorVo(
+        id: _professor?.id,
+        cpf: _cpfController.text,
+        nomeCompleto: _nomeCompletoController.text,
+        email: _emailController.text,
+        dataNascimento: dataNascimento,
+        sexo: _sexo!,
+        curso: _curso!,
+        ativo: _ativo
+      );
+      _repository.save(professor);
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Professor salvo com sucesso!'))
+      );
+      Navigator.of(context).pop();
+    }
   }
 }
 
