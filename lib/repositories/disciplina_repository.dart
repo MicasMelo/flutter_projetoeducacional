@@ -1,5 +1,5 @@
 import 'package:tarefa2/enums/modalidade_enum.dart';
-import 'package:tarefa2/models/disciplina.dart';
+import 'package:tarefa2/models/disciplina_vo.dart';
 import 'package:tarefa2/enums/curso_enum.dart';
 
 // essa classe simula uma tabela de DISCIPLINAS (em memória)

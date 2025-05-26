@@ -1,7 +1,7 @@
 enum ModalidadeEnum {
-  presencial('Masculino'),
+  presencial('Presencial'),
   adistancia('EAD'),
-  hibrida('Híbrida');
+  hibrido('Híbrido');
 
   final String descricao;
   const ModalidadeEnum(this.descricao);

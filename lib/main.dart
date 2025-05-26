@@ -2,7 +2,7 @@ import 'package:tarefa2/enums/curso_enum.dart';
 import 'package:tarefa2/enums/modalidade_enum.dart';
 import 'package:tarefa2/enums/sexo_enum.dart';
 import 'package:tarefa2/models/aluno_vo.dart';
-import 'package:tarefa2/models/disciplina.dart';
+import 'package:tarefa2/models/disciplina_vo.dart';
 import 'package:tarefa2/models/professor_vo.dart';
 import 'package:tarefa2/repositories/aluno_repository.dart';
 import 'package:flutter/material.dart';
@@ -81,17 +81,47 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AlunoListPage()),
-              );
-            },
+          PopupMenuButton<String>(
             icon: Icon(Icons.list_outlined),
-          ),
-        ],
-      ),
+            onSelected: (value) {
+              switch (value) {
+                case 'aluno':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AlunoListPage()),
+                  );
+                  break;
+                case 'professor':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfessorListPage()),
+                  );
+                  break;
+                case 'disciplina':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => DisciplinaListPage()),
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'aluno',
+                child: Text('Listar Alunos'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'professor',
+                child: Text('Listar Professores'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'disciplina',
+                child: Text('Listar Disciplinas'),
+              ),
+            ],
+          )
+        ]
+      )
     );
   }
 }
@@ -738,6 +768,117 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
   }
 }
 
+class ProfessorListPage extends StatefulWidget {
+  const ProfessorListPage({super.key});
+
+  @override
+  State<ProfessorListPage> createState() => _ProfessorListPageState();
+}
+
+class _ProfessorListPageState extends State<ProfessorListPage> {
+  final ProfessorRepository _repository = ProfessorRepository();
+  late List<ProfessorVo> _professores;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarProfessores();
+  }
+
+  void _carregarProfessores() {
+    setState(() {
+      _professores = _repository.findAll();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Listagem de Professores'),
+        actions: [IconButton(onPressed: (){
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => ProfessorFormPage())
+          ).then((_) => _carregarProfessores());
+        }, icon: Icon(Icons.add_outlined))]
+      ),
+      body: _professores.isEmpty ? Center(
+        child: Text('Nenhum professor cadastrado',
+          style: Theme.of(context).textTheme.titleLarge
+        )
+      ) : ListView.builder(
+            itemCount: _professores.length,
+            itemBuilder: (context, index) {
+              return _buildProfessorTile(_professores[index]);
+            }
+          )
+    );
+  }
+
+  Widget _buildProfessorTile(ProfessorVo professor) {
+    return Dismissible(
+      key: Key(professor.id),
+      background: Container(
+        color: Colors.blue,
+        child: Center(
+          child: Icon(Icons.edit_outlined, color: Colors.white)
+        )
+      ),
+      secondaryBackground: Container(
+        color: Colors.red,
+        child: Center(
+          child: Icon(Icons.delete_outlined, color: Colors.white)
+        )
+      ),
+      child: ListTile(
+        leading: Icon(
+          Icons.person_outlined,
+          color: professor.sexo == SexoEnum.masculino ? Colors.blue : Colors.pink,
+          size: 36,
+        ),
+        title: Text(professor.nomeCompleto),
+        subtitle: Text(professor.cpf),
+        trailing:
+            professor.ativo
+                ? const Icon(Icons.check_circle_outlined, color: Colors.green)
+                : const Icon(Icons.cancel_outlined, color: Colors.red),
+        onTap: () => _mostrarDetalhesProfessor(professor),
+      )
+    );
+  }
+
+  void _mostrarDetalhesProfessor(ProfessorVo professor) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(professor.nomeCompleto),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('RA: ${professor.cpf}'),
+              Text('Curso: ${professor.curso.descricao}'),
+              Text('Idade: ${professor.idade} anos'),
+              Text(
+                'Status: ${professor.ativo ? 'Ativo' : 'Desativado'}',
+              )
+            ]
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _DateInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -965,5 +1106,114 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
       );
       Navigator.of(context).pop();
     }
+  }
+}
+
+class DisciplinaListPage extends StatefulWidget {
+  const DisciplinaListPage({super.key});
+
+  @override
+  State<DisciplinaListPage> createState() => _DisciplinaListPageState();
+}
+
+class _DisciplinaListPageState extends State<DisciplinaListPage> {
+  final DisciplinaRepository _repository = DisciplinaRepository();
+  late List<DisciplinaVo> _disciplinas;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarDisciplinas();
+  }
+
+  void _carregarDisciplinas() {
+    setState(() {
+      _disciplinas = _repository.findAll();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Listagem de Disciplians'),
+        actions: [IconButton(onPressed: (){
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => DisciplinaFormPage())
+          ).then((_) => _carregarDisciplinas());
+        }, icon: Icon(Icons.add_outlined))]
+      ),
+      body: _disciplinas.isEmpty ? Center(
+        child: Text('Nenhuma disciplina cadastrado',
+          style: Theme.of(context).textTheme.titleLarge
+        )
+      ) : ListView.builder(
+            itemCount: _disciplinas.length,
+            itemBuilder: (context, index) {
+              return _buildDisciplinaTile(_disciplinas[index]);
+            }
+          )
+    );
+  }
+
+  Widget _buildDisciplinaTile(DisciplinaVo disciplina) {
+    return Dismissible(
+      key: Key(disciplina.id),
+      background: Container(
+        color: Colors.blue,
+        child: Center(
+          child: Icon(Icons.edit_outlined, color: Colors.white)
+        )
+      ),
+      secondaryBackground: Container(
+        color: Colors.red,
+        child: Center(
+          child: Icon(Icons.delete_outlined, color: Colors.white)
+        )
+      ),
+      child: ListTile(
+        leading: Icon(
+          Icons.auto_stories_outlined,
+          size: 36,
+        ),
+        title: Text(disciplina.nome),
+        subtitle: Text(disciplina.curso.descricao),
+        trailing:
+            disciplina.ativo
+                ? const Icon(Icons.check_circle_outlined, color: Colors.green)
+                : const Icon(Icons.cancel_outlined, color: Colors.red),
+        onTap: () => _mostrarDetalhesDisciplina(disciplina),
+      )
+    );
+  }
+
+  void _mostrarDetalhesDisciplina(DisciplinaVo disciplina) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(disciplina.nome),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Curso: ${disciplina.curso.descricao}'),
+              Text('Modalidade: ${disciplina.modalidade.descricao}'),
+              Text(
+                'Status: ${disciplina.ativo ? 'Disponível' : 'Indisponível'}',
+              )
+            ]
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
