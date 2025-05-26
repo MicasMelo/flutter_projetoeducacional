@@ -10,8 +10,6 @@ import 'package:flutter/services.dart';
 import 'package:tarefa2/repositories/disciplina_repository.dart';
 import 'package:tarefa2/repositories/professor_repository.dart';
 
-// import 'exceptions/aluno_not_found_exception.dart';
-
 void main() {
   runApp(const MyApp());
 }
