@@ -1,4 +1,5 @@
 import 'package:tarefa2/enums/modalidade_enum.dart';
+import 'package:tarefa2/exceptions/disciplina_not_found_exception.dart';
 import 'package:tarefa2/models/disciplina_vo.dart';
 import 'package:tarefa2/enums/curso_enum.dart';
 
@@ -28,7 +29,39 @@ class DisciplinaRepository {
     _disciplinas[disciplina.id] = disciplina;
   }
 
+  DisciplinaVo findById(String id) {
+    if (!_disciplinas.containsKey(id)) {
+      throw DisciplinaNotFoundException(id);
+    }
+    return _disciplinas[id]!;
+  }
+
+  List<DisciplinaVo> findByCPFOrName(String valor) {
+    final String termo =
+        valor.toLowerCase();
+    final List<DisciplinaVo> disciplinas =
+        _disciplinas.values
+            .where(
+              (disciplina) =>
+                  disciplina.nome.toLowerCase().contains(termo)
+            )
+            .toList();
+
+    if (disciplinas.isEmpty) {
+      throw DisciplinaNotFoundException(valor, isId: false);
+    }
+
+    return disciplinas;
+  }
+
   List<DisciplinaVo> findAll() {
     return _disciplinas.values.toList();
+  }
+
+  void deleteById(String id) {
+    if (!_disciplinas.containsKey(id)) {
+      throw DisciplinaNotFoundException(id);
+    }
+    _disciplinas.remove(id);
   }
 }

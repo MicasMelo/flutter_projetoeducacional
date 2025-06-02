@@ -1,6 +1,9 @@
 import 'package:tarefa2/enums/curso_enum.dart';
 import 'package:tarefa2/enums/modalidade_enum.dart';
 import 'package:tarefa2/enums/sexo_enum.dart';
+import 'package:tarefa2/exceptions/aluno_not_found_exception.dart';
+import 'package:tarefa2/exceptions/disciplina_not_found_exception.dart';
+import 'package:tarefa2/exceptions/professor_not_found_exception.dart';
 import 'package:tarefa2/models/aluno_vo.dart';
 import 'package:tarefa2/models/disciplina_vo.dart';
 import 'package:tarefa2/models/professor_vo.dart';
@@ -170,9 +173,9 @@ class AlunoFormPage extends StatefulWidget {
 }
 
 class ProfessorFormPage extends StatefulWidget {
-  final String? professorID;
+  final String? professorId;
 
-  const ProfessorFormPage({super.key, this.professorID});
+  const ProfessorFormPage({super.key, this.professorId});
 
   @override
   State<ProfessorFormPage> createState() => _ProfessorFormPageState();
@@ -202,6 +205,15 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
   bool _matriculado = false;
 
   AlunoVo? _aluno;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.alunoId != null) {
+      // edição de aluno
+      _carregarAluno();
+    }
+  }
 
   @override
   void dispose() {
@@ -493,6 +505,28 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
       Navigator.of(context).pop(); // finaliza a tela de formulário
     }
   }
+
+  void _carregarAluno() {
+    try {
+      _aluno = _repository.findById(widget.alunoId!);
+      _raController.text = _aluno!.ra;
+      _nomeCompletoController.text = _aluno!.nomeCompleto;
+      _emailController.text = _aluno!.email;
+      _dataNascimentoController.text =
+          '${_aluno!.dataNascimento.day.toString().padLeft(2, '0')}/'
+          '${_aluno!.dataNascimento.month.toString().padLeft(2, '0')}/'
+          '${_aluno!.dataNascimento.year}';
+      _sexo = _aluno!.sexo;
+      _curso = _aluno!.curso;
+      _matriculado = _aluno!.matriculado;
+    } on AlunoNotFoundException catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      Navigator.pop(context);
+    }
+  }
 }
 
 class AlunoListPage extends StatefulWidget {
@@ -557,10 +591,38 @@ class _AlunoListPageState extends State<AlunoListPage> {
           child: Icon(Icons.delete_outlined, color: Colors.white)
         )
       ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // edição do aluno
+          _editarAluno(aluno.id);
+          return false;
+        } else {
+          return await showDialog(context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('Confirma exclusão?'),
+                content: Text('Deseja remover o aluno ${aluno.nomeCompleto}'),
+                actions: [
+                  TextButton(onPressed: () {
+                    Navigator.of(context).pop(false);
+                  }, child: Text('Cancelar')),
+                  TextButton(onPressed: () {
+                    Navigator.of(context).pop(true);
+                  }, child: Text('Remover')),
+                ],
+              );
+            },);
+        }
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
+          _removerAluno(aluno.id);
+        }
+      },
       child: ListTile(
         leading: Icon(
           Icons.person_outlined,
-          color: aluno.sexo == SexoEnum.masculino ? Colors.blue : Colors.pink,
+          color: aluno.sexo == SexoEnum.masculino ? Colors.blue : Colors.pinkAccent,
           size: 36,
         ),
         title: Text(aluno.nomeCompleto),
@@ -604,6 +666,30 @@ class _AlunoListPageState extends State<AlunoListPage> {
       },
     );
   }
+
+  void _editarAluno(String id) {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(builder: (context) => AlunoFormPage(alunoId: id)),
+        )
+        .then((_) => _carregarAlunos());
+  }
+  
+  void _removerAluno(String id) {
+    try {
+      _repository.deleteById(id);
+      _carregarAlunos();
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Aluno removido com sucesso'))
+      );
+    } on AlunoNotFoundException catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()))
+      );
+    }
+  }
 }
 
 class _ProfessorFormPageState extends State<ProfessorFormPage> {
@@ -621,6 +707,14 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
   bool _ativo = false;
 
   ProfessorVo? _professor;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.professorId != null) {
+      _carregarProfessor();
+    }
+  }
 
   @override
   void dispose() {
@@ -775,8 +869,8 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
                           idade--;
                         }
 
-                        if (idade < 18) {
-                          return 'Professor deve ter pelo menos 18 anos';
+                        if (idade < 21) {
+                          return 'Professor deve ter pelo menos 21 anos';
                         }
 
                       } catch (e) {
@@ -912,6 +1006,28 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
       Navigator.of(context).pop();
     }
   }
+
+  void _carregarProfessor() {
+    try {
+      _professor = _repository.findById(widget.professorId!);
+      _cpfController.text = _professor!.cpf;
+      _nomeCompletoController.text = _professor!.nomeCompleto;
+      _emailController.text = _professor!.email;
+      _dataNascimentoController.text =
+          '${_professor!.dataNascimento.day.toString().padLeft(2, '0')}/'
+          '${_professor!.dataNascimento.month.toString().padLeft(2, '0')}/'
+          '${_professor!.dataNascimento.year}';
+      _sexo = _professor!.sexo;
+      _curso = _professor!.curso;
+      _ativo = _professor!.ativo;
+    } on ProfessorNotFoundException catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      Navigator.pop(context);
+    }
+  }
 }
 
 class ProfessorListPage extends StatefulWidget {
@@ -976,10 +1092,37 @@ class _ProfessorListPageState extends State<ProfessorListPage> {
           child: Icon(Icons.delete_outlined, color: Colors.white)
         )
       ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          _editarProfessor(professor.id);
+          return false;
+        } else {
+          return await showDialog(context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('Confirma exclusão?'),
+                content: Text('Deseja remover o professor ${professor.nomeCompleto}'),
+                actions: [
+                  TextButton(onPressed: () {
+                    Navigator.of(context).pop(false);
+                  }, child: Text('Cancelar')),
+                  TextButton(onPressed: () {
+                    Navigator.of(context).pop(true);
+                  }, child: Text('Remover')),
+                ],
+              );
+            },);
+        }
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
+          _removerProfessor(professor.id);
+        }
+      },
       child: ListTile(
         leading: Icon(
           Icons.person_outlined,
-          color: professor.sexo == SexoEnum.masculino ? Colors.blue : Colors.pink,
+          color: professor.sexo == SexoEnum.masculino ? Colors.blue : Colors.pinkAccent,
           size: 36,
         ),
         title: Text(professor.nomeCompleto),
@@ -1023,6 +1166,30 @@ class _ProfessorListPageState extends State<ProfessorListPage> {
       },
     );
   }
+
+  void _editarProfessor(String id) {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(builder: (context) => ProfessorFormPage(professorId: id)),
+        )
+        .then((_) => _carregarProfessores());
+  }
+  
+  void _removerProfessor(String id) {
+    try {
+      _repository.deleteById(id);
+      _carregarProfessores();
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Professor removido com sucesso'))
+      );
+    } on ProfessorNotFoundException catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()))
+      );
+    }
+  }
 }
 
 class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
@@ -1038,6 +1205,14 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
   bool _ativo = false;
 
   DisciplinaVo? _disciplina;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.disciplinaId != null) {
+      _carregarDisciplina();
+    }
+  }
 
   @override
   void dispose() {
@@ -1218,7 +1393,7 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
                   Row(
                     children: [
                       Radio<bool>(
-                        value: false,
+                        value: true,
                         groupValue: _ativo,
                         onChanged: (value) {
                           setState(() {
@@ -1233,7 +1408,7 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
                   Row(
                     children: [
                       Radio<bool>(
-                        value: true,
+                        value: false,
                         groupValue: _ativo,
                         onChanged: (value) {
                           setState(() {
@@ -1275,6 +1450,26 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
         content: Text('Disciplina salva com sucesso!'))
       );
       Navigator.of(context).pop();
+    }
+  }
+
+  void _carregarDisciplina() {
+    try {
+      _disciplina = _repository.findById(widget.disciplinaId!);
+      _nomeController.text = _disciplina!.nome;
+      _dataCriacaoController.text =
+          '${_disciplina!.dataCriacao.day.toString().padLeft(2, '0')}/'
+          '${_disciplina!.dataCriacao.month.toString().padLeft(2, '0')}/'
+          '${_disciplina!.dataCriacao.year}';
+      _curso = _disciplina!.curso;
+      _modalidade = _disciplina!.modalidade;
+      _ativo = _disciplina!.ativo;
+    } on ProfessorNotFoundException catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      Navigator.pop(context);
     }
   }
 }
@@ -1341,6 +1536,33 @@ class _DisciplinaListPageState extends State<DisciplinaListPage> {
           child: Icon(Icons.delete_outlined, color: Colors.white)
         )
       ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          _editarDisciplina(disciplina.id);
+          return false;
+        } else {
+          return await showDialog(context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('Confirma exclusão?'),
+                content: Text('Deseja remover a disciplina ${disciplina.nome}'),
+                actions: [
+                  TextButton(onPressed: () {
+                    Navigator.of(context).pop(false);
+                  }, child: Text('Cancelar')),
+                  TextButton(onPressed: () {
+                    Navigator.of(context).pop(true);
+                  }, child: Text('Remover')),
+                ],
+              );
+            },);
+        }
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
+          _removerDisciplina(disciplina.id);
+        }
+      },
       child: ListTile(
         leading: Icon(
           Icons.auto_stories_outlined,
@@ -1385,5 +1607,29 @@ class _DisciplinaListPageState extends State<DisciplinaListPage> {
         );
       },
     );
+  }
+
+  void _editarDisciplina(String id) {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(builder: (context) => DisciplinaFormPage(disciplinaId: id)),
+        )
+        .then((_) => _carregarDisciplinas());
+  }
+  
+  void _removerDisciplina(String id) {
+    try {
+      _repository.deleteById(id);
+      _carregarDisciplinas();
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Disciplina removida com sucesso'))
+      );
+    } on DisciplinaNotFoundException catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()))
+      );
+    }
   }
 }
