@@ -1,3 +1,4 @@
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:tarefa2/enums/curso_enum.dart';
 import 'package:tarefa2/enums/modalidade_enum.dart';
 import 'package:tarefa2/enums/sexo_enum.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tarefa2/repositories/disciplina_repository.dart';
 import 'package:tarefa2/repositories/professor_repository.dart';
+import 'package:tarefa2/utils/cpf_formatter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -697,6 +699,12 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
 
   final _repository = ProfessorRepository();
 
+  final _cpfFormatter = MaskTextInputFormatter(
+    mask: '###.###.###-##',
+    filter: { "#": RegExp(r'[0-9]') },
+  );
+
+
   final _cpfController = TextEditingController();
   final _nomeCompletoController = TextEditingController();
   final _emailController = TextEditingController();
@@ -766,18 +774,17 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   labelText: 'CPF',
-                  hintText: '12345678900',
+                  hintText: '123.456.789-00',
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(11),
+                  _cpfFormatter,
                 ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'CPF é obrigatório';
-                  } else if (value.length != 11) {
-                    return 'CPF deve ter exatamente 11 dígitos';
+                  } else if (!_cpfFormatter.isFill()) {
+                    return 'CPF incompleto';
                   }
                   return null;
                 },
@@ -813,6 +820,8 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'E-mail é obrigatório';
+                  } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    return 'E-mail inválido';
                   }
                   return null;
                 },
@@ -1010,7 +1019,8 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
   void _carregarProfessor() {
     try {
       _professor = _repository.findById(widget.professorId!);
-      _cpfController.text = _professor!.cpf;
+      _cpfController.text = CPFFormatter.format(_professor!.cpf);
+
       _nomeCompletoController.text = _professor!.nomeCompleto;
       _emailController.text = _professor!.email;
       _dataNascimentoController.text =
@@ -1126,7 +1136,8 @@ class _ProfessorListPageState extends State<ProfessorListPage> {
           size: 36,
         ),
         title: Text(professor.nomeCompleto),
-        subtitle: Text(professor.cpf),
+        subtitle: Text(CPFFormatter.format(professor.cpf)),
+
         trailing:
             professor.ativo
                 ? const Icon(Icons.check_circle_outlined, color: Colors.green)
@@ -1146,8 +1157,8 @@ class _ProfessorListPageState extends State<ProfessorListPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('RA: ${professor.cpf}'),
-              Text('Curso: ${professor.curso.descricao}'),
+              Text('CPF: ${CPFFormatter.format(professor.cpf)}'),
+              Text('Área de Ensino: ${professor.curso.descricao}'),
               Text('Idade: ${professor.idade} anos'),
               Text(
                 'Status: ${professor.ativo ? 'Ativo' : 'Desativado'}',
