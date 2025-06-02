@@ -31,23 +31,47 @@ class _DisciplinaListPageState extends State<DisciplinaListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Listagem de Disciplians'),
+        title: Text('Listagem de Disciplinas'),
         actions: [IconButton(onPressed: (){
           Navigator.of(context).push(
             MaterialPageRoute(builder: (context) => DisciplinaFormPage())
           ).then((_) => _carregarDisciplinas());
         }, icon: Icon(Icons.add_outlined))]
       ),
-      body: _disciplinas.isEmpty ? Center(
-        child: Text('Nenhuma disciplina cadastrado',
-          style: Theme.of(context).textTheme.titleLarge
-        )
-      ) : ListView.builder(
-            itemCount: _disciplinas.length,
-            itemBuilder: (context, index) {
-              return _buildDisciplinaTile(_disciplinas[index]);
-            }
-          )
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: ClipRRect(
+            child: Container(
+              padding: EdgeInsets.all(20),
+              constraints: BoxConstraints(maxWidth: 600),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: _disciplinas.isEmpty ? Center(
+                child: Text('Nenhuma disciplina cadastrado',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                )
+              ) : ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: _disciplinas.length,
+                    itemBuilder: (context, index) {
+                      return _buildDisciplinaTile(_disciplinas[index]);
+                    }
+                  )
+            ),
+          ),
+        ),
+      ),
     );
   }
 

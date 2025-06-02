@@ -40,19 +40,43 @@ class _ProfessorListPageState extends State<ProfessorListPage> {
           ).then((_) => _carregarProfessores());
         }, icon: Icon(Icons.add_outlined))]
       ),
-      body: _professores.isEmpty ? Center(
-        child: Text('Nenhum professor cadastrado',
-          style: Theme.of(context).textTheme.titleLarge
-        )
-      ) : ListView.builder(
-            itemCount: _professores.length,
-            itemBuilder: (context, index) {
-              return _buildProfessorTile(_professores[index]);
-            }
-          )
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: ClipRRect(
+            child: Container(
+              padding: EdgeInsets.all(20),
+              constraints: BoxConstraints(maxWidth: 600),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: _professores.isEmpty ? Center(
+                child: Text('Nenhum professor cadastrado',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                )
+              ) : ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: _professores.length,
+                    itemBuilder: (context, index) {
+                      return _buildProfessorTile(_professores[index]);
+                    }
+                  )
+            ),
+          ),
+        ),
+      ),
     );
   }
-
+  
   Widget _buildProfessorTile(ProfessorVo professor) {
     return Dismissible(
       key: Key(professor.id),

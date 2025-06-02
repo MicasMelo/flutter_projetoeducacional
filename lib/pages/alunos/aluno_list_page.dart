@@ -40,16 +40,40 @@ class _AlunoListPageState extends State<AlunoListPage> {
           ).then((_) => _carregarAlunos());
         }, icon: Icon(Icons.add_outlined))]
       ),
-      body: _alunos.isEmpty ? Center(
-        child: Text('Nenhum aluno cadastrado',
-          style: Theme.of(context).textTheme.titleLarge
-        )
-      ) : ListView.builder(
-            itemCount: _alunos.length,
-            itemBuilder: (context, index) {
-              return _buildAlunoTile(_alunos[index]);
-            }
-          )
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: ClipRRect(
+            child: Container(
+              padding: EdgeInsets.all(20),
+              constraints: BoxConstraints(maxWidth: 600),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: _alunos.isEmpty ? Center(
+                child: Text('Nenhum aluno cadastrado',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                ),
+              ) : ListView.builder(
+                    shrinkWrap: true, // importante para funcionar dentro do ScrollView
+                    physics: NeverScrollableScrollPhysics(), // desativa o scroll interno
+                    itemCount: _alunos.length,
+                    itemBuilder: (context, index) {
+                      return _buildAlunoTile(_alunos[index]);
+                    },
+                  ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
