@@ -156,9 +156,24 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
               SizedBox(height: 16),
               GestureDetector(
                 onTap: () async {
+                  DateTime initialDate = DateTime.now().subtract(Duration(days: 365 * 16));
+                  if (_dataCriacaoController.text.isNotEmpty) {
+                    try {
+                      final parts = _dataCriacaoController.text.split('/');
+                      if (parts.length == 3) {
+                        final day = int.parse(parts[0]);
+                        final month = int.parse(parts[1]);
+                        final year = int.parse(parts[2]);
+                        initialDate = DateTime(year, month, day);
+                      }
+                    } catch (_) {
+                    }
+                  }
+
                   DateTime? pickedDate = await showDatePicker(
                     context: context,
-                    initialDate: DateTime.now().subtract(Duration(days: 365 * 16)),
+                    locale: const Locale('pt', 'BR'),
+                    initialDate: initialDate,
                     firstDate: DateTime(1900),
                     lastDate: DateTime.now(),
                   );
@@ -166,9 +181,9 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
                   if (pickedDate != null) {
                     setState(() {
                       _dataCriacaoController.text = 
-                          "${pickedDate.day.toString().padLeft(2, '0')}/"
-                          "${pickedDate.month.toString().padLeft(2, '0')}/"
-                          "${pickedDate.year}";
+                        "${pickedDate.day.toString().padLeft(2, '0')}/"
+                        "${pickedDate.month.toString().padLeft(2, '0')}/"
+                        "${pickedDate.year}";
                     });
                   }
                 },

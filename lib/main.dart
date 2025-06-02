@@ -1,3 +1,4 @@
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tarefa2/pages/alunos/aluno_form_page.dart';
 import 'package:tarefa2/pages/alunos/aluno_list_page.dart';
 import 'package:tarefa2/pages/disciplinas/disciplina_form_page.dart';
@@ -18,8 +19,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       
       debugShowCheckedModeBanner: false,
+      locale: const Locale('pt', 'BR'),
+      supportedLocales: const [
+        Locale('pt', 'BR'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
-        useMaterial3: false, // Se quiser usar Material 3, pode por true
+        useMaterial3: false,
         scaffoldBackgroundColor: const Color(0xFF202123),
 
         appBarTheme: const AppBarTheme(
@@ -33,7 +43,7 @@ class MyApp extends StatelessWidget {
         ),
 
         colorScheme: ColorScheme(
-          brightness: Brightness.dark, // Define que é um tema escuro
+          brightness: Brightness.dark,
           primary: Color.fromARGB(255, 78, 190, 255),
           onPrimary: Colors.white,
           secondary: Colors.grey,

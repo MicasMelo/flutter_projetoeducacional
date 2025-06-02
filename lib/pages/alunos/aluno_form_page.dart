@@ -146,9 +146,24 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
               SizedBox(height: 16),
               GestureDetector(
                 onTap: () async {
+                  DateTime initialDate = DateTime.now().subtract(Duration(days: 365 * 16));
+                  if (_dataNascimentoController.text.isNotEmpty) {
+                    try {
+                      final parts = _dataNascimentoController.text.split('/');
+                      if (parts.length == 3) {
+                        final day = int.parse(parts[0]);
+                        final month = int.parse(parts[1]);
+                        final year = int.parse(parts[2]);
+                        initialDate = DateTime(year, month, day);
+                      }
+                    } catch (_) {
+                    }
+                  }
+
                   DateTime? pickedDate = await showDatePicker(
                     context: context,
-                    initialDate: DateTime.now().subtract(Duration(days: 365 * 16)),
+                    locale: const Locale('pt', 'BR'),
+                    initialDate: initialDate,
                     firstDate: DateTime(1900),
                     lastDate: DateTime.now(),
                   );
@@ -156,9 +171,9 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
                   if (pickedDate != null) {
                     setState(() {
                       _dataNascimentoController.text = 
-                          "${pickedDate.day.toString().padLeft(2, '0')}/"
-                          "${pickedDate.month.toString().padLeft(2, '0')}/"
-                          "${pickedDate.year}";
+                        "${pickedDate.day.toString().padLeft(2, '0')}/"
+                        "${pickedDate.month.toString().padLeft(2, '0')}/"
+                        "${pickedDate.year}";
                     });
                   }
                 },
