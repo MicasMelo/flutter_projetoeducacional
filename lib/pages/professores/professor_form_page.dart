@@ -5,7 +5,6 @@ import 'package:tarefa2/enums/sexo_enum.dart';
 import 'package:tarefa2/exceptions/professor_not_found_exception.dart';
 import 'package:tarefa2/models/professor_vo.dart';
 import 'package:tarefa2/repositories/professor_repository.dart';
-import 'package:tarefa2/utils/cpf_formatter.dart';
 
 class ProfessorFormPage extends StatefulWidget {
   final String? professorId;
