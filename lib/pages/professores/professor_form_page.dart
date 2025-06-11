@@ -353,25 +353,37 @@ class _ProfessorFormPageState extends State<ProfessorFormPage> {
     }
   }
 
-  void _carregarProfessor() {
+  Future<void> _carregarProfessor() async {
     try {
-      _professor = _repository.findById(widget.professorId!);
-      _cpfController.text = CPFFormatter.format(_professor!.cpf);
-
-      _nomeCompletoController.text = _professor!.nomeCompleto;
-      _emailController.text = _professor!.email;
-      _dataNascimentoController.text =
-          '${_professor!.dataNascimento.day.toString().padLeft(2, '0')}/'
-          '${_professor!.dataNascimento.month.toString().padLeft(2, '0')}/'
-          '${_professor!.dataNascimento.year}';
-      _sexo = _professor!.sexo;
-      _curso = _professor!.curso;
-      _ativo = _professor!.ativo;
+      final professor = await _repository.findById(widget.professorId!);
+      setState(() {
+        _professor = professor;
+        _cpfController.text = _professor!.cpf;
+        _nomeCompletoController.text = _professor!.nomeCompleto;
+        _emailController.text = _professor!.email;
+        _dataNascimentoController.text =
+            '${_professor!.dataNascimento.day.toString().padLeft(2, '0')}/'
+            '${_professor!.dataNascimento.month.toString().padLeft(2, '0')}/'
+            '${_professor!.dataNascimento.year}';
+        _sexo = _professor!.sexo;
+        _curso = _professor!.curso;
+        _ativo = _professor!.ativo;
+      });
     } on ProfessorNotFoundException catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar professor: ${e.toString()}')),
+      );
       Navigator.pop(context);
     }
   }

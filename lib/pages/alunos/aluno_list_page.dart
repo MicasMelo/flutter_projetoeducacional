@@ -15,18 +15,36 @@ class AlunoListPage extends StatefulWidget {
 
 class _AlunoListPageState extends State<AlunoListPage> {
   final AlunoRepository _repository = AlunoRepository();
-  late List<AlunoVo> _alunos;
+  // late List<AlunoVo> _alunos;
+
+  List<AlunoVo> _alunos = []; // Inicializa como lista vazia
 
   @override
   void initState() {
     super.initState();
-    _carregarAlunos();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _carregarAlunos();
+    });
   }
 
-  void _carregarAlunos() {
-    setState(() {
-      _alunos = _repository.findAll();
-    });
+  Future<void> _carregarAlunos() async {
+    try {
+      final alunos = await _repository.findAll();
+      if (!mounted) return;
+
+      setState(() {
+        _alunos = alunos;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao carregar lista de alunos: ${e.toString()}'),
+        ),
+      );
+    }
   }
 
   @override

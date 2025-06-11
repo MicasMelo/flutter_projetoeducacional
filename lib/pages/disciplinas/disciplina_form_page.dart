@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tarefa2/enums/curso_enum.dart';
 import 'package:tarefa2/enums/modalidade_enum.dart';
-import 'package:tarefa2/exceptions/professor_not_found_exception.dart';
+import 'package:tarefa2/exceptions/disciplina_not_found_exception.dart';
 import 'package:tarefa2/models/disciplina_vo.dart';
 import 'package:tarefa2/repositories/disciplina_repository.dart';
 
@@ -290,22 +290,35 @@ class _DisciplinaFormPageState extends State<DisciplinaFormPage> {
     }
   }
 
-  void _carregarDisciplina() {
+  Future<void> _carregarDisciplina() async {
     try {
-      _disciplina = _repository.findById(widget.disciplinaId!);
-      _nomeController.text = _disciplina!.nome;
-      _dataCriacaoController.text =
-          '${_disciplina!.dataCriacao.day.toString().padLeft(2, '0')}/'
-          '${_disciplina!.dataCriacao.month.toString().padLeft(2, '0')}/'
-          '${_disciplina!.dataCriacao.year}';
-      _curso = _disciplina!.curso;
-      _modalidade = _disciplina!.modalidade;
-      _ativo = _disciplina!.ativo;
-    } on ProfessorNotFoundException catch (e) {
+      final disciplina = await _repository.findById(widget.disciplinaId!);
+      setState(() {
+        _disciplina = disciplina;
+        _nomeController.text = _disciplina!.nome;
+        _dataCriacaoController.text =
+            '${_disciplina!.dataCriacao.day.toString().padLeft(2, '0')}/'
+            '${_disciplina!.dataCriacao.month.toString().padLeft(2, '0')}/'
+            '${_disciplina!.dataCriacao.year}';
+        _curso = _disciplina!.curso;
+        _modalidade = _disciplina!.modalidade;
+        _ativo = _disciplina!.ativo;
+      });
+    } on DisciplinaNotFoundException catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar disciplina: ${e.toString()}')),
+      );
       Navigator.pop(context);
     }
   }

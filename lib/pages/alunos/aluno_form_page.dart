@@ -348,24 +348,37 @@ class _AlunoFormPageState extends State<AlunoFormPage> {
     }
   }
 
-  void _carregarAluno() {
+  Future<void> _carregarAluno() async {
     try {
-      _aluno = _repository.findById(widget.alunoId!);
-      _raController.text = _aluno!.ra;
-      _nomeCompletoController.text = _aluno!.nomeCompleto;
-      _emailController.text = _aluno!.email;
-      _dataNascimentoController.text =
-          '${_aluno!.dataNascimento.day.toString().padLeft(2, '0')}/'
-          '${_aluno!.dataNascimento.month.toString().padLeft(2, '0')}/'
-          '${_aluno!.dataNascimento.year}';
-      _sexo = _aluno!.sexo;
-      _curso = _aluno!.curso;
-      _matriculado = _aluno!.matriculado;
+      final aluno = await _repository.findById(widget.alunoId!);
+      setState(() {
+        _aluno = aluno;
+        _raController.text = _aluno!.ra;
+        _nomeCompletoController.text = _aluno!.nomeCompleto;
+        _emailController.text = _aluno!.email;
+        _dataNascimentoController.text =
+            '${_aluno!.dataNascimento.day.toString().padLeft(2, '0')}/'
+            '${_aluno!.dataNascimento.month.toString().padLeft(2, '0')}/'
+            '${_aluno!.dataNascimento.year}';
+        _sexo = _aluno!.sexo;
+        _curso = _aluno!.curso;
+        _matriculado = _aluno!.matriculado;
+      });
     } on AlunoNotFoundException catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar aluno: ${e.toString()}')),
+      );
       Navigator.pop(context);
     }
   }

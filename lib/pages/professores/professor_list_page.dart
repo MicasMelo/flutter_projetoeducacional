@@ -15,18 +15,35 @@ class ProfessorListPage extends StatefulWidget {
 
 class _ProfessorListPageState extends State<ProfessorListPage> {
   final ProfessorRepository _repository = ProfessorRepository();
-  late List<ProfessorVo> _professores;
+  
+  List<ProfessorVo> _professores = [];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
     _carregarProfessores();
+    });
   }
 
-  void _carregarProfessores() {
-    setState(() {
-      _professores = _repository.findAll();
-    });
+  Future<void> _carregarProfessores() async {
+    try {
+      final professores = await _repository.findAll();
+      if (!mounted) return;
+
+      setState(() {
+        _professores = professores;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao carregar lista de professores: ${e.toString()}'),
+        ),
+      );
+    }
   }
 
   @override

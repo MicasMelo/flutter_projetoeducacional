@@ -13,18 +13,35 @@ class DisciplinaListPage extends StatefulWidget {
 
 class _DisciplinaListPageState extends State<DisciplinaListPage> {
   final DisciplinaRepository _repository = DisciplinaRepository();
-  late List<DisciplinaVo> _disciplinas;
+  
+  List<DisciplinaVo> _disciplinas = [];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
     _carregarDisciplinas();
+    });
   }
 
-  void _carregarDisciplinas() {
-    setState(() {
-      _disciplinas = _repository.findAll();
-    });
+  Future<void> _carregarDisciplinas() async {
+    try {
+      final disciplinas = await _repository.findAll();
+      if (!mounted) return;
+
+      setState(() {
+        _disciplinas = disciplinas;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao carregar lista de disciplinas: ${e.toString()}'),
+        ),
+      );
+    }
   }
 
   @override
