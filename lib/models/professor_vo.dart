@@ -57,7 +57,7 @@ class ProfessorVo {
       dataNascimento: DateTime.parse(map['dataNascimento']), // aquele ISO
       sexo: SexoEnum.values[map['sexo']],
       curso: CursoEnum.values[map['curso']],
-      ativo: map['ativo'],
+      ativo: map['ativo'] == 1,
     );
   }
 }

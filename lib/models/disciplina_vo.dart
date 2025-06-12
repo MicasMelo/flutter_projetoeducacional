@@ -39,7 +39,7 @@ class DisciplinaVo {
       curso: CursoEnum.values[map['curso']],
       modalidade: ModalidadeEnum.values[map['modalidade']],
       dataCriacao: DateTime.parse(map['dataCriacao']),
-      ativo: map['ativo'],
+      ativo: map['ativo'] == 1,
     );
   }
 }
